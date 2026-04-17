@@ -13,6 +13,10 @@ export default function HomeScreen() {
       const user = await getUser();
       if (!user) { router.replace('/(auth)/login'); return; }
       const profile = await getProfile(user.id);
+      if (!profile.poids_initial_kg) {
+        router.replace('/(onboarding)/step1');
+        return;
+      }
       setPrenom(profile.prenom);
     }
     loadProfile();

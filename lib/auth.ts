@@ -35,9 +35,35 @@ export async function getUser() {
 export async function getProfile(userId: string) {
   const { data, error } = await supabase
     .from('profiles')
-    .select('prenom')
+    .select('prenom, poids_initial_kg, poids_objectif_kg, taille_cm, age, tour_taille_cm, tour_hanches_cm, date_debut_parcours')
     .eq('id', userId)
     .single();
   if (error) throw error;
   return data;
+}
+
+export async function updateProfile(userId: string, updates: {
+  age?: number;
+  taille_cm?: number;
+  poids_initial_kg?: number;
+  poids_objectif_kg?: number;
+  tour_taille_cm?: number | null;
+  tour_hanches_cm?: number | null;
+  date_debut_parcours?: string;
+}) {
+  const { error } = await supabase
+    .from('profiles')
+    .update(updates)
+    .eq('id', userId);
+  if (error) throw error;
+}
+
+export async function createPhaseProgress(userId: string, entries: Array<{
+  phase: 'offensive' | 'destockage' | 'stabilisation';
+  date_debut: string;
+  date_fin_prevue: string | null;
+}>) {
+  const rows = entries.map(e => ({ user_id: userId, ...e }));
+  const { error } = await supabase.from('phase_progress').insert(rows);
+  if (error) throw error;
 }
