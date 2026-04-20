@@ -1,11 +1,11 @@
 import { supabase } from './supabase';
 
-export type FoodList = 'verte' | 'orange' | 'rouge';
+export type FoodList = 'verte' | 'jaune' | 'orange' | 'rouge';
 
 export interface Food {
   id: string;
   nom: string;
-  ig: number;
+  ig: number | null;
   liste: FoodList;
 }
 

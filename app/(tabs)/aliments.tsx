@@ -7,16 +7,18 @@ import { theme } from '../../lib/theme';
 import { strings } from '../../lib/strings';
 import { getFoods, type Food, type FoodList } from '../../lib/foods';
 
-const LIST_ORDER: FoodList[] = ['verte', 'orange', 'rouge'];
+const LIST_ORDER: FoodList[] = ['verte', 'jaune', 'orange', 'rouge'];
 
 const LIST_COLORS: Record<FoodList, string> = {
   verte:  '#3A7D44',
+  jaune:  '#8A7A20',
   orange: '#C07A2A',
   rouge:  '#B03030',
 };
 
 const LIST_BG: Record<FoodList, string> = {
   verte:  '#EAF5EB',
+  jaune:  '#FAF7E0',
   orange: '#FBF0E2',
   rouge:  '#FAEAEA',
 };
@@ -94,9 +96,11 @@ function FoodRow({ food }: { food: Food }) {
   return (
     <View style={[styles.row, { backgroundColor: LIST_BG[food.liste] }]}>
       <Text style={styles.rowName}>{food.nom}</Text>
-      <View style={[styles.igBadge, { backgroundColor: LIST_COLORS[food.liste] }]}>
-        <Text style={styles.igText}>{strings.foods.igLabel} {food.ig}</Text>
-      </View>
+      {food.ig !== null && food.ig > 0 && (
+        <View style={[styles.igBadge, { backgroundColor: LIST_COLORS[food.liste] }]}>
+          <Text style={styles.igText}>{strings.foods.igLabel} {food.ig}</Text>
+        </View>
+      )}
     </View>
   );
 }

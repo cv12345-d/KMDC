@@ -70,8 +70,9 @@ export default function JournalScreen() {
       const updated = await getTodayEntry(userId);
       setEntry(updated);
       setTimeout(() => setSaved(false), 3000);
-    } catch {
-      setError(strings.errors.networkError);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : JSON.stringify(e);
+      setError(msg || strings.errors.networkError);
     } finally {
       setSaving(false);
     }

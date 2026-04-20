@@ -36,7 +36,7 @@ export default function HomeScreen() {
         getJournalToday(user.id),
       ]);
 
-      if (!profile.poids_initial_kg) {
+      if (!profile || !profile.poids_initial_kg) {
         router.replace('/(onboarding)/step1');
         return;
       }

@@ -23,6 +23,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="journal"  options={{ title: strings.tabs.journal  }} />
       <Tabs.Screen name="aliments" options={{ title: strings.tabs.aliments }} />
       <Tabs.Screen name="suivi"    options={{ title: strings.tabs.suivi    }} />
+      <Tabs.Screen name="settings" options={{ title: strings.tabs.settings }} />
     </Tabs>
   );
 }

@@ -43,8 +43,8 @@ export default function SuiviScreen() {
         getTodayEntry(user.id),
       ]);
 
-      setPoidsInitial(profile.poids_initial_kg ?? null);
-      setPoidsObjectif(profile.poids_objectif_kg ?? null);
+      setPoidsInitial(profile?.poids_initial_kg ?? null);
+      setPoidsObjectif(profile?.poids_objectif_kg ?? null);
       setEntries(hist);
       setTodayEntry(today);
       if (today) {
@@ -74,8 +74,9 @@ export default function SuiviScreen() {
       setEditMode(false);
       setTimeout(() => setSaved(false), 3000);
       await load();
-    } catch {
-      setError(strings.errors.networkError);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : JSON.stringify(e);
+      setError(msg || strings.errors.networkError);
     } finally {
       setSaving(false);
     }

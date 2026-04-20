@@ -37,7 +37,7 @@ export async function getProfile(userId: string) {
     .from('profiles')
     .select('prenom, poids_initial_kg, poids_objectif_kg, taille_cm, age, tour_taille_cm, tour_hanches_cm, date_debut_parcours')
     .eq('id', userId)
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -51,10 +51,16 @@ export async function updateProfile(userId: string, updates: {
   tour_hanches_cm?: number | null;
   date_debut_parcours?: string;
 }) {
+  const { data: { user } } = await supabase.auth.getUser();
+  const existing = await getProfile(userId);
   const { error } = await supabase
     .from('profiles')
-    .update(updates)
-    .eq('id', userId);
+    .upsert({
+      id: userId,
+      email: user?.email ?? '',
+      prenom: existing?.prenom ?? '',
+      ...updates,
+    });
   if (error) throw error;
 }
 
@@ -63,6 +69,7 @@ export async function createPhaseProgress(userId: string, entries: Array<{
   date_debut: string;
   date_fin_prevue: string | null;
 }>) {
+  await supabase.from('phase_progress').delete().eq('user_id', userId);
   const rows = entries.map(e => ({ user_id: userId, ...e }));
   const { error } = await supabase.from('phase_progress').insert(rows);
   if (error) throw error;

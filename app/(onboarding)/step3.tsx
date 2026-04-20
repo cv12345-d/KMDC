@@ -52,8 +52,9 @@ export default function OnboardingStep3() {
       ]);
 
       router.replace('/(tabs)/home');
-    } catch {
-      setError(strings.errors.networkError);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : JSON.stringify(e);
+      setError(msg || strings.errors.networkError);
     } finally {
       setLoading(false);
     }
