@@ -16,6 +16,13 @@ import { getExams, examStatus, formatNextDate, EXAM_CONFIG, type PreventiveExam 
 import { theme } from '../../lib/theme';
 import { strings } from '../../lib/strings';
 
+function weekISO(): string {
+  const d = new Date();
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  return new Date(d.setDate(diff)).toISOString().split('T')[0];
+}
+
 interface HomeData {
   prenom: string;
   phase: CurrentPhase | null;
@@ -33,6 +40,7 @@ export default function HomeScreen() {
   const [loading,    setLoading]    = useState(true);
   const [waterCount,    setWaterCount]    = useState(0);
   const [movementCount, setMovementCount] = useState(0);
+  const [alcoholCount,  setAlcoholCount]  = useState(0);
 
   useFocusEffect(useCallback(() => { load(); }, []));
 
@@ -79,8 +87,10 @@ export default function HomeScreen() {
 
       const storedWater    = await AsyncStorage.getItem(`water_${todayISO()}`);
       const storedMovement = await AsyncStorage.getItem(`movement_${todayISO()}`);
+      const storedAlcohol  = await AsyncStorage.getItem(`alcohol_${weekISO()}`);
       setWaterCount(storedWater       ? parseInt(storedWater,    10) : 0);
       setMovementCount(storedMovement ? parseInt(storedMovement, 10) : 0);
+      setAlcoholCount(storedAlcohol   ? parseInt(storedAlcohol,  10) : 0);
     } catch (e) {
       console.error('home load error:', e);
     } finally {
@@ -105,6 +115,12 @@ export default function HomeScreen() {
     const newCount = movementCount === n ? n - 1 : n;
     setMovementCount(newCount);
     await AsyncStorage.setItem(`movement_${todayISO()}`, String(newCount));
+  }
+
+  async function handleAlcoholTap(n: number) {
+    const newCount = alcoholCount === n ? n - 1 : n;
+    setAlcoholCount(newCount);
+    await AsyncStorage.setItem(`alcohol_${weekISO()}`, String(newCount));
   }
 
   // Transition logic
@@ -382,6 +398,27 @@ export default function HomeScreen() {
             </View>
             <Text style={s.waterStatus}>
               {movementCount * 15} / 30 min{movementCount >= 2 ? ' — Objectif atteint ✓' : ''}{movementCount > 2 ? ` (${movementCount * 15} min au total)` : ''}
+            </Text>
+          </View>
+
+          <View style={s.waterBlock}>
+            <Text style={s.waterBlockLabel}>ALCOOL — CETTE SEMAINE</Text>
+            <View style={s.waterGlassRow}>
+              {Array.from({ length: 7 }).map((_, i) => (
+                <TouchableOpacity
+                  key={i}
+                  onPress={() => handleAlcoholTap(i + 1)}
+                  style={[s.waterGlass, i < alcoholCount && s.alcoholBlockFull]}
+                  hitSlop={6}
+                />
+              ))}
+            </View>
+            <Text style={s.waterStatus}>
+              {alcoholCount === 0
+                ? 'Aucun verre cette semaine'
+                : alcoholCount <= 7
+                ? `${alcoholCount} verre${alcoholCount > 1 ? 's' : ''} · dans les recommandations`
+                : `${alcoholCount} verres · au-dessus des recommandations (max 7/sem.)`}
             </Text>
           </View>
         </View>
@@ -673,6 +710,7 @@ const s = StyleSheet.create({
   waterGlassFull:      { backgroundColor: theme.colors.inkSoft, borderColor: theme.colors.inkSoft },
   movementBlockFull:   { backgroundColor: '#3A7D44', borderColor: '#3A7D44' },
   movementGoalBorder:  { borderRightWidth: 3, borderRightColor: theme.colors.ink },
+  alcoholBlockFull:    { backgroundColor: '#7A3050', borderColor: '#7A3050' },
   waterStatus:         { fontFamily: theme.fontFamily.mono, fontSize: 9, color: theme.colors.inkMuted, letterSpacing: 1 },
 
   // Sign out
