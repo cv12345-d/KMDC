@@ -25,138 +25,93 @@ export default function LoginScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <View style={styles.inner}>
-        <Text style={styles.title}>{strings.auth.loginTitle}</Text>
-        <Text style={styles.subtitle}>{strings.auth.loginSubtitle}</Text>
+    <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View style={s.inner}>
 
-        <View style={styles.form}>
-          <Text style={styles.label}>{strings.auth.labelEmail}</Text>
-          <TextInput
-            style={styles.input}
-            value={email}
-            onChangeText={setEmail}
-            placeholder={strings.auth.placeholderEmail}
-            placeholderTextColor={theme.colors.textMuted}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoComplete="email"
-            accessibilityLabel={strings.auth.labelEmail}
-          />
+        {/* ── HEADER ── */}
+        <View style={s.header}>
+          <Text style={s.eyebrow}>MÉTHODE KMDC</Text>
+          <Text style={s.title}>Connexion.</Text>
+        </View>
 
-          <Text style={styles.label}>{strings.auth.labelPassword}</Text>
-          <TextInput
-            style={styles.input}
-            value={password}
-            onChangeText={setPassword}
-            placeholder={strings.auth.placeholderPw}
-            placeholderTextColor={theme.colors.textMuted}
-            secureTextEntry
-            autoComplete="password"
-            accessibilityLabel={strings.auth.labelPassword}
-          />
+        <View style={s.divider} />
 
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+        {/* ── FORM ── */}
+        <View style={s.form}>
+          <View style={s.field}>
+            <Text style={s.label}>{strings.auth.labelEmail.toUpperCase()}</Text>
+            <TextInput
+              style={s.input}
+              value={email}
+              onChangeText={setEmail}
+              placeholder={strings.auth.placeholderEmail}
+              placeholderTextColor={theme.colors.inkMuted}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="email"
+              textContentType="emailAddress"
+              accessibilityLabel={strings.auth.labelEmail}
+            />
+          </View>
 
-          <TouchableOpacity
-            style={[styles.btn, loading && styles.btnDisabled]}
-            onPress={handleLogin}
-            disabled={loading}
-            accessibilityLabel={strings.auth.btnLogin}
-          >
-            <Text style={styles.btnText}>
-              {loading ? 'Connexion…' : strings.auth.btnLogin}
-            </Text>
+          <View style={s.field}>
+            <Text style={s.label}>{strings.auth.labelPassword.toUpperCase()}</Text>
+            <TextInput
+              style={s.input}
+              value={password}
+              onChangeText={setPassword}
+              placeholder={strings.auth.placeholderPw}
+              placeholderTextColor={theme.colors.inkMuted}
+              secureTextEntry
+              autoComplete="current-password"
+              textContentType="password"
+              accessibilityLabel={strings.auth.labelPassword}
+            />
+          </View>
+
+          {error ? <Text style={s.error}>{error}</Text> : null}
+
+          <TouchableOpacity style={[s.btn, loading && s.btnDisabled]} onPress={handleLogin} disabled={loading}>
+            <Text style={s.btnText}>{loading ? 'CONNEXION…' : strings.auth.btnLogin.toUpperCase()}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.btnGhost}
-            onPress={() => router.push('/(auth)/signup')}
-            accessibilityLabel="Créer un compte"
-          >
-            <Text style={styles.btnGhostText}>Créer un compte</Text>
+          <TouchableOpacity style={s.btnGhost} onPress={() => router.push('/(auth)/signup')}>
+            <Text style={s.btnGhostText}>CRÉER UN COMPTE</Text>
           </TouchableOpacity>
         </View>
+
       </View>
     </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  inner: {
-    flex: 1,
-    padding: theme.spacing.lg,
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: theme.fontSize.xxl,
-    color: theme.colors.textDark,
-    marginBottom: theme.spacing.sm,
-  },
-  subtitle: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textMuted,
-    fontStyle: 'italic',
-    lineHeight: 22,
-    marginBottom: theme.spacing.xl,
-  },
-  form: {
-    gap: theme.spacing.sm,
-  },
-  label: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSoft,
-    marginBottom: 2,
-  },
+const s = StyleSheet.create({
+  root:  { flex: 1, backgroundColor: theme.colors.app },
+  inner: { flex: 1, paddingHorizontal: theme.spacing.lg, justifyContent: 'center' },
+
+  header:  { paddingBottom: theme.spacing.lg },
+  eyebrow: { fontFamily: theme.fontFamily.mono, fontSize: theme.fontSize.xs, color: theme.colors.inkMuted, letterSpacing: 2, marginBottom: 14 },
+  title:   { fontFamily: theme.fontFamily.display, fontSize: theme.fontSize.display, lineHeight: theme.fontSize.display * 0.9, color: theme.colors.ink, letterSpacing: -2 },
+
+  divider: { height: 1, backgroundColor: theme.colors.ink, marginBottom: theme.spacing.xl },
+
+  form:  { gap: theme.spacing.md },
+  field: { gap: 6 },
+  label: { fontFamily: theme.fontFamily.mono, fontSize: 9, color: theme.colors.inkMuted, letterSpacing: 2 },
   input: {
-    backgroundColor: theme.colors.inputBg,
-    borderWidth: 1.5,
-    borderColor: theme.colors.border,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md,
-    fontSize: theme.fontSize.md,
-    color: theme.colors.textDark,
-    marginBottom: theme.spacing.sm,
+    fontFamily: theme.fontFamily.display, fontSize: theme.fontSize.md,
+    color: theme.colors.ink,
+    borderBottomWidth: 1, borderBottomColor: theme.colors.ink,
+    paddingVertical: 10,
     minHeight: theme.touchTarget,
   },
-  error: {
-    fontSize: theme.fontSize.sm,
-    color: '#C0392B',
-    marginBottom: theme.spacing.sm,
-  },
-  btn: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md,
-    alignItems: 'center',
-    minHeight: theme.touchTarget,
-    marginTop: theme.spacing.sm,
-  },
-  btnDisabled: {
-    opacity: 0.6,
-  },
-  btnText: {
-    color: '#FFFFFF',
-    fontSize: theme.fontSize.md,
-  },
-  btnGhost: {
-    borderWidth: 1.5,
-    borderColor: theme.colors.accent,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md,
-    alignItems: 'center',
-    minHeight: theme.touchTarget,
-    marginTop: theme.spacing.sm,
-  },
-  btnGhostText: {
-    color: theme.colors.primary,
-    fontSize: theme.fontSize.md,
-  },
+
+  error: { fontFamily: theme.fontFamily.mono, fontSize: theme.fontSize.xs, color: '#C0392B' },
+
+  btn:         { backgroundColor: theme.colors.ink, padding: theme.spacing.md, alignItems: 'center', minHeight: theme.touchTarget },
+  btnDisabled: { opacity: 0.5 },
+  btnText:     { fontFamily: theme.fontFamily.mono, fontSize: theme.fontSize.xs, color: theme.colors.invertInk, letterSpacing: 2 },
+  btnGhost:    { borderWidth: 1, borderColor: theme.colors.ink, padding: theme.spacing.md, alignItems: 'center', minHeight: theme.touchTarget },
+  btnGhostText:{ fontFamily: theme.fontFamily.mono, fontSize: theme.fontSize.xs, color: theme.colors.ink, letterSpacing: 2 },
 });

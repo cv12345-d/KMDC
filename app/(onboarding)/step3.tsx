@@ -1,27 +1,28 @@
 import { useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  ScrollView, Platform,
+  ScrollView,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { theme } from '../../lib/theme';
 import { strings } from '../../lib/strings';
-import { calculatePhases, addWeeks, formatDateISO, phaseLabelFr } from '../../lib/phases';
+import { addDays, PREPARATION_DAYS, RESET_DAYS, formatDateISO } from '../../lib/phases';
 import { getUser, updateProfile, createPhaseProgress } from '../../lib/auth';
 
 export default function OnboardingStep3() {
   const params = useLocalSearchParams<{
     age: string; weight: string; target: string;
     height: string; waist: string; hips: string;
+    menopause: string; regles: string;
+    nycturie: string; sommeil: string; ths: string;
   }>();
 
   const weight  = parseFloat(params.weight);
   const target  = parseFloat(params.target);
-  const { offensiveWeeks, destockageWeeks } = calculatePhases(weight, target);
 
-  const today   = new Date();
-  const offEnd  = addWeeks(today, offensiveWeeks);
-  const desEnd  = addWeeks(offEnd, destockageWeeks);
+  const today    = new Date();
+  const prepEnd  = addDays(today, PREPARATION_DAYS);
+  const resetEnd = addDays(prepEnd, RESET_DAYS);
 
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState('');
@@ -35,20 +36,32 @@ export default function OnboardingStep3() {
 
       const startISO = formatDateISO(today);
 
+      const reglesParsed = (() => {
+        if (!params.regles) return null;
+        const [d, m, y] = params.regles.split('/').map(Number);
+        if (!d || !m || !y) return null;
+        return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      })();
+
       await updateProfile(user.id, {
         age:               parseInt(params.age, 10),
         taille_cm:         parseInt(params.height, 10),
         poids_initial_kg:  weight,
         poids_objectif_kg: target,
-        tour_taille_cm:    params.waist  ? parseInt(params.waist, 10)  : null,
-        tour_hanches_cm:   params.hips   ? parseInt(params.hips, 10)   : null,
+        tour_taille_cm:    params.waist ? parseInt(params.waist, 10) : null,
+        tour_hanches_cm:   params.hips  ? parseInt(params.hips, 10)  : null,
         date_debut_parcours: startISO,
+        statut_menopause:  params.menopause as 'menopausee' | 'perimenopaused' | 'non',
+        date_dernieres_regles: reglesParsed,
+        nycturie:          params.nycturie === '1',
+        manque_sommeil:    params.sommeil  === '1',
+        ths:               params.ths as 'oui' | 'non' | 'inconnu',
       });
 
       await createPhaseProgress(user.id, [
-        { phase: 'offensive',     date_debut: startISO,              date_fin_prevue: formatDateISO(offEnd) },
-        { phase: 'destockage',    date_debut: formatDateISO(offEnd),  date_fin_prevue: formatDateISO(desEnd) },
-        { phase: 'stabilisation', date_debut: formatDateISO(desEnd),  date_fin_prevue: null },
+        { phase: 'preparation', date_debut: startISO,               date_fin_prevue: formatDateISO(prepEnd)  },
+        { phase: 'reset',       date_debut: formatDateISO(prepEnd), date_fin_prevue: formatDateISO(resetEnd) },
+        { phase: 'destockage',  date_debut: formatDateISO(resetEnd), date_fin_prevue: null                   },
       ]);
 
       router.replace('/(tabs)/home');
@@ -60,115 +73,82 @@ export default function OnboardingStep3() {
     }
   }
 
+  const phases = [
+    { label: 'Préparation',      duration: '7 JOURS' },
+    { label: 'Reset',            duration: '5 JOURS' },
+    { label: 'Déstockage actif', duration: "JUSQU'À VOTRE OBJECTIF" },
+    { label: 'Réintroduction',   duration: '4 À 8 SEMAINES' },
+    { label: 'Équilibre de vie', duration: 'MODE DE VIE DURABLE' },
+  ];
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.inner}>
-      <View style={styles.progress}>
-        <View style={[styles.dot, styles.dotDone]} />
-        <View style={[styles.dot, styles.dotDone]} />
-        <View style={[styles.dot, styles.dotActive]} />
+    <ScrollView style={s.root} contentContainerStyle={s.inner}>
+
+      {/* ── PROGRESS ── */}
+      <View style={s.progress}>
+        <View style={[s.tick, s.tickDone]} />
+        <View style={[s.tick, s.tickDone]} />
+        <View style={[s.tick, s.tickDone]} />
+        <View style={[s.tick, s.tickOn]} />
+      </View>
+      <Text style={s.stepLabel}>ÉTAPE 4 / 4</Text>
+
+      {/* ── HEADER ── */}
+      <View style={s.header}>
+        <Text style={s.title}>{strings.onboarding.step3Title}</Text>
+      </View>
+      <View style={s.divider} />
+
+      <Text style={s.subtitle}>{strings.onboarding.step3Subtitle}</Text>
+
+      {/* ── PHASES ── */}
+      <View style={s.phases}>
+        {phases.map((p, i) => (
+          <View key={p.label} style={[s.phaseRow, i < phases.length - 1 && s.phaseRowBorder]}>
+            <Text style={s.phaseNum}>{String(i + 1).padStart(2, '0')}</Text>
+            <Text style={s.phaseName}>{p.label}</Text>
+            <Text style={s.phaseDur}>{p.duration}</Text>
+          </View>
+        ))}
       </View>
 
-      <Text style={styles.title}>{strings.onboarding.step3Title}</Text>
-      <Text style={styles.subtitle}>{strings.onboarding.step3Subtitle}</Text>
+      <Text style={s.note}>{strings.onboarding.summaryIntro}</Text>
 
-      <View style={styles.summaryCard}>
-        <PhaseRow
-          phase={phaseLabelFr('offensive')}
-          duration={strings.onboarding.weeks(offensiveWeeks)}
-          color={theme.colors.primary}
-          isFirst
-        />
-        <PhaseRow
-          phase={phaseLabelFr('destockage')}
-          duration={strings.onboarding.weeks(destockageWeeks)}
-          color={theme.colors.accent}
-        />
-        <PhaseRow
-          phase={phaseLabelFr('stabilisation')}
-          duration={strings.onboarding.indefinite}
-          color={theme.colors.journalAccent}
-          isLast
-        />
-      </View>
+      {error ? <Text style={s.error}>{error}</Text> : null}
 
-      <Text style={styles.summaryNote}>{strings.onboarding.summaryIntro}</Text>
-
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-
-      <TouchableOpacity
-        style={[styles.btn, loading && styles.btnDisabled]}
-        onPress={handleStart}
-        disabled={loading}
-        accessibilityLabel={strings.onboarding.btnStart}
-      >
-        <Text style={styles.btnText}>
-          {loading ? 'Enregistrement…' : strings.onboarding.btnStart}
-        </Text>
+      <TouchableOpacity style={[s.btn, loading && s.btnDisabled]} onPress={handleStart} disabled={loading}>
+        <Text style={s.btnText}>{loading ? 'ENREGISTREMENT…' : strings.onboarding.btnStart.toUpperCase()}</Text>
       </TouchableOpacity>
+
     </ScrollView>
   );
 }
 
-function PhaseRow({
-  phase, duration, color, isFirst, isLast,
-}: {
-  phase: string; duration: string; color: string;
-  isFirst?: boolean; isLast?: boolean;
-}) {
-  return (
-    <View style={[
-      rowStyles.row,
-      isFirst && rowStyles.rowFirst,
-      isLast  && rowStyles.rowLast,
-    ]}>
-      <View style={[rowStyles.dot, { backgroundColor: color }]} />
-      <View style={rowStyles.texts}>
-        <Text style={rowStyles.name}>{phase}</Text>
-      </View>
-      <Text style={rowStyles.duration}>{duration}</Text>
-    </View>
-  );
-}
+const s = StyleSheet.create({
+  root:  { flex: 1, backgroundColor: theme.colors.app },
+  inner: { paddingHorizontal: theme.spacing.lg, paddingTop: theme.spacing.xxl, paddingBottom: theme.spacing.xl },
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  inner: { padding: theme.spacing.lg, paddingTop: theme.spacing.xxl },
-  progress: { flexDirection: 'row', gap: 8, marginBottom: theme.spacing.xl },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: theme.colors.border },
-  dotActive: { backgroundColor: theme.colors.primary, width: 24 },
-  dotDone:   { backgroundColor: theme.colors.accent },
-  title:    { fontSize: theme.fontSize.xxl, color: theme.colors.textDark, marginBottom: theme.spacing.sm },
-  subtitle: { fontSize: theme.fontSize.sm, color: theme.colors.textMuted, fontStyle: 'italic', lineHeight: 22, marginBottom: theme.spacing.xl },
-  summaryCard: {
-    backgroundColor: theme.colors.card, borderRadius: theme.borderRadius.lg,
-    borderWidth: 1, borderColor: theme.colors.border,
-    marginBottom: theme.spacing.md,
-    overflow: 'hidden',
-  },
-  summaryNote: {
-    fontSize: theme.fontSize.sm, color: theme.colors.textMuted,
-    fontStyle: 'italic', textAlign: 'center',
-    marginBottom: theme.spacing.xl,
-  },
-  error: { fontSize: theme.fontSize.sm, color: '#C0392B', marginBottom: theme.spacing.md },
-  btn: {
-    backgroundColor: theme.colors.primary, borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md, alignItems: 'center', minHeight: theme.touchTarget,
-  },
-  btnDisabled: { opacity: 0.6 },
-  btnText: { color: '#FFF', fontSize: theme.fontSize.md },
-});
+  progress:  { flexDirection: 'row', gap: 6, marginBottom: 8 },
+  tick:      { flex: 1, height: 3, backgroundColor: theme.colors.line },
+  tickOn:    { backgroundColor: theme.colors.ink },
+  tickDone:  { backgroundColor: theme.colors.inkSoft },
+  stepLabel: { fontFamily: theme.fontFamily.mono, fontSize: 9, color: theme.colors.inkMuted, letterSpacing: 2, marginBottom: theme.spacing.lg },
 
-const rowStyles = StyleSheet.create({
-  row: {
-    flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md,
-    padding: theme.spacing.md,
-    borderBottomWidth: 1, borderBottomColor: theme.colors.border,
-  },
-  rowFirst: {},
-  rowLast:  { borderBottomWidth: 0 },
-  dot:      { width: 12, height: 12, borderRadius: 6, flexShrink: 0 },
-  texts:    { flex: 1 },
-  name:     { fontSize: theme.fontSize.md, color: theme.colors.textMid },
-  duration: { fontSize: theme.fontSize.sm, color: theme.colors.textSoft },
+  header:  { paddingBottom: theme.spacing.lg },
+  title:   { fontFamily: theme.fontFamily.display, fontSize: theme.fontSize.display, lineHeight: theme.fontSize.display * 0.9, color: theme.colors.ink, letterSpacing: -2 },
+  divider: { height: 1, backgroundColor: theme.colors.ink, marginBottom: theme.spacing.lg },
+  subtitle:{ fontFamily: theme.fontFamily.mono, fontSize: theme.fontSize.xs, color: theme.colors.inkMuted, letterSpacing: 0.5, lineHeight: 18, marginBottom: theme.spacing.xl },
+
+  phases:        { borderTopWidth: 1, borderTopColor: theme.colors.ink, marginBottom: theme.spacing.lg },
+  phaseRow:      { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, gap: 14 },
+  phaseRowBorder:{ borderBottomWidth: 1, borderBottomColor: theme.colors.line },
+  phaseNum:      { fontFamily: theme.fontFamily.mono, fontSize: 10, color: theme.colors.inkMuted, width: 24, letterSpacing: 1 },
+  phaseName:     { flex: 1, fontFamily: theme.fontFamily.display, fontSize: theme.fontSize.md, color: theme.colors.ink },
+  phaseDur:      { fontFamily: theme.fontFamily.mono, fontSize: 9, color: theme.colors.inkSoft, letterSpacing: 1 },
+
+  note:        { fontFamily: theme.fontFamily.mono, fontSize: 9, color: theme.colors.inkMuted, letterSpacing: 0.5, lineHeight: 16, textAlign: 'center', marginBottom: theme.spacing.xl },
+  error:       { fontFamily: theme.fontFamily.mono, fontSize: theme.fontSize.xs, color: '#C0392B', marginBottom: theme.spacing.md },
+  btn:         { backgroundColor: theme.colors.ink, padding: theme.spacing.md, alignItems: 'center', minHeight: theme.touchTarget },
+  btnDisabled: { opacity: 0.5 },
+  btnText:     { fontFamily: theme.fontFamily.mono, fontSize: theme.fontSize.xs, color: theme.colors.invertInk, letterSpacing: 2 },
 });

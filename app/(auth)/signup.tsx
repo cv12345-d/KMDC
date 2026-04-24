@@ -14,10 +14,7 @@ export default function SignupScreen() {
 
   async function handleSignup() {
     setError('');
-    if (password.length < 8) {
-      setError(strings.auth.errorWeakPassword);
-      return;
-    }
+    if (password.length < 8) { setError(strings.auth.errorWeakPassword); return; }
     setLoading(true);
     try {
       await signUp(email, password, prenom);
@@ -30,156 +27,108 @@ export default function SignupScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView contentContainerStyle={styles.inner} keyboardShouldPersistTaps="handled">
-        <TouchableOpacity onPress={() => router.back()} style={styles.back}>
-          <Text style={styles.backText}>{strings.auth.btnBack}</Text>
+    <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView contentContainerStyle={s.inner} keyboardShouldPersistTaps="handled">
+
+        <TouchableOpacity onPress={() => router.back()} style={s.back}>
+          <Text style={s.backText}>← {strings.auth.btnBack.toUpperCase()}</Text>
         </TouchableOpacity>
 
-        <Text style={styles.title}>{strings.auth.signupTitle}</Text>
-        <Text style={styles.subtitle}>{strings.auth.signupSubtitle}</Text>
+        {/* ── HEADER ── */}
+        <View style={s.header}>
+          <Text style={s.eyebrow}>MA SAISON</Text>
+          <Text style={s.title}>Créer{'\n'}un compte.</Text>
+        </View>
 
-        <View style={styles.form}>
-          <Text style={styles.label}>{strings.auth.labelFirstName}</Text>
-          <TextInput
-            style={styles.input}
-            value={prenom}
-            onChangeText={setPrenom}
-            placeholder="Caroline"
-            placeholderTextColor={theme.colors.textMuted}
-            autoCapitalize="words"
-            accessibilityLabel={strings.auth.labelFirstName}
-          />
+        <View style={s.divider} />
 
-          <Text style={styles.label}>{strings.auth.labelEmail}</Text>
-          <TextInput
-            style={styles.input}
-            value={email}
-            onChangeText={setEmail}
-            placeholder={strings.auth.placeholderEmail}
-            placeholderTextColor={theme.colors.textMuted}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoComplete="email"
-            accessibilityLabel={strings.auth.labelEmail}
-          />
+        {/* ── FORM ── */}
+        <View style={s.form}>
+          <View style={s.field}>
+            <Text style={s.label}>{strings.auth.labelFirstName.toUpperCase()}</Text>
+            <TextInput
+              style={s.input}
+              value={prenom}
+              onChangeText={setPrenom}
+              placeholder="Caroline"
+              placeholderTextColor={theme.colors.inkMuted}
+              autoCapitalize="words"
+              accessibilityLabel={strings.auth.labelFirstName}
+            />
+          </View>
 
-          <Text style={styles.label}>{strings.auth.labelPassword}</Text>
-          <TextInput
-            style={styles.input}
-            value={password}
-            onChangeText={setPassword}
-            placeholder={strings.auth.placeholderPw}
-            placeholderTextColor={theme.colors.textMuted}
-            secureTextEntry
-            accessibilityLabel={strings.auth.labelPassword}
-          />
-          <Text style={styles.hint}>{strings.auth.hintPassword}</Text>
+          <View style={s.field}>
+            <Text style={s.label}>{strings.auth.labelEmail.toUpperCase()}</Text>
+            <TextInput
+              style={s.input}
+              value={email}
+              onChangeText={setEmail}
+              placeholder={strings.auth.placeholderEmail}
+              placeholderTextColor={theme.colors.inkMuted}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+              accessibilityLabel={strings.auth.labelEmail}
+            />
+          </View>
 
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+          <View style={s.field}>
+            <Text style={s.label}>{strings.auth.labelPassword.toUpperCase()}</Text>
+            <TextInput
+              style={s.input}
+              value={password}
+              onChangeText={setPassword}
+              placeholder={strings.auth.placeholderPw}
+              placeholderTextColor={theme.colors.inkMuted}
+              secureTextEntry
+              accessibilityLabel={strings.auth.labelPassword}
+            />
+            <Text style={s.hint}>{strings.auth.hintPassword}</Text>
+          </View>
 
-          <TouchableOpacity
-            style={[styles.btn, loading && styles.btnDisabled]}
-            onPress={handleSignup}
-            disabled={loading}
-            accessibilityLabel={strings.auth.btnCreateAccount}
-          >
-            <Text style={styles.btnText}>
-              {loading ? 'Création…' : strings.auth.btnCreateAccount}
-            </Text>
+          {error ? <Text style={s.error}>{error}</Text> : null}
+
+          <TouchableOpacity style={[s.btn, loading && s.btnDisabled]} onPress={handleSignup} disabled={loading}>
+            <Text style={s.btnText}>{loading ? 'CRÉATION…' : strings.auth.btnCreateAccount.toUpperCase()}</Text>
           </TouchableOpacity>
 
-          <Text style={styles.legal}>{strings.auth.legalNotice}</Text>
+          <Text style={s.legal}>{strings.auth.legalNotice}</Text>
         </View>
+
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  inner: {
-    padding: theme.spacing.lg,
-    paddingTop: theme.spacing.xxl,
-  },
-  back: {
-    marginBottom: theme.spacing.lg,
-    minHeight: theme.touchTarget,
-    justifyContent: 'center',
-  },
-  backText: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSoft,
-  },
-  title: {
-    fontSize: theme.fontSize.xxl,
-    color: theme.colors.textDark,
-    marginBottom: theme.spacing.sm,
-  },
-  subtitle: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textMuted,
-    fontStyle: 'italic',
-    lineHeight: 22,
-    marginBottom: theme.spacing.xl,
-  },
-  form: {
-    gap: theme.spacing.sm,
-  },
-  label: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSoft,
-    marginBottom: 2,
-  },
+const s = StyleSheet.create({
+  root:  { flex: 1, backgroundColor: theme.colors.app },
+  inner: { paddingHorizontal: theme.spacing.lg, paddingTop: theme.spacing.xxl, paddingBottom: theme.spacing.xl },
+
+  back:     { minHeight: theme.touchTarget, justifyContent: 'center', marginBottom: theme.spacing.lg },
+  backText: { fontFamily: theme.fontFamily.mono, fontSize: theme.fontSize.xs, color: theme.colors.inkMuted, letterSpacing: 2 },
+
+  header:  { paddingBottom: theme.spacing.lg },
+  eyebrow: { fontFamily: theme.fontFamily.mono, fontSize: theme.fontSize.xs, color: theme.colors.inkMuted, letterSpacing: 2, marginBottom: 14 },
+  title:   { fontFamily: theme.fontFamily.display, fontSize: theme.fontSize.display, lineHeight: theme.fontSize.display * 0.9, color: theme.colors.ink, letterSpacing: -2 },
+
+  divider: { height: 1, backgroundColor: theme.colors.ink, marginBottom: theme.spacing.xl },
+
+  form:  { gap: theme.spacing.md },
+  field: { gap: 6 },
+  label: { fontFamily: theme.fontFamily.mono, fontSize: 9, color: theme.colors.inkMuted, letterSpacing: 2 },
   input: {
-    backgroundColor: theme.colors.inputBg,
-    borderWidth: 1.5,
-    borderColor: theme.colors.border,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md,
-    fontSize: theme.fontSize.md,
-    color: theme.colors.textDark,
-    marginBottom: theme.spacing.sm,
+    fontFamily: theme.fontFamily.display, fontSize: theme.fontSize.md,
+    color: theme.colors.ink,
+    borderBottomWidth: 1, borderBottomColor: theme.colors.ink,
+    paddingVertical: 10,
     minHeight: theme.touchTarget,
   },
-  hint: {
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.textMuted,
-    fontStyle: 'italic',
-    marginTop: -theme.spacing.sm,
-    marginBottom: theme.spacing.sm,
-  },
-  error: {
-    fontSize: theme.fontSize.sm,
-    color: '#C0392B',
-    marginBottom: theme.spacing.sm,
-  },
-  btn: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md,
-    alignItems: 'center',
-    minHeight: theme.touchTarget,
-    marginTop: theme.spacing.sm,
-  },
-  btnDisabled: {
-    opacity: 0.6,
-  },
-  btnText: {
-    color: '#FFFFFF',
-    fontSize: theme.fontSize.md,
-  },
-  legal: {
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.textMuted,
-    textAlign: 'center',
-    lineHeight: 18,
-    marginTop: theme.spacing.md,
-  },
+  hint:  { fontFamily: theme.fontFamily.mono, fontSize: 9, color: theme.colors.inkMuted, letterSpacing: 0.5, fontStyle: 'italic' },
+  error: { fontFamily: theme.fontFamily.mono, fontSize: theme.fontSize.xs, color: '#C0392B' },
+
+  btn:         { backgroundColor: theme.colors.ink, padding: theme.spacing.md, alignItems: 'center', minHeight: theme.touchTarget },
+  btnDisabled: { opacity: 0.5 },
+  btnText:     { fontFamily: theme.fontFamily.mono, fontSize: theme.fontSize.xs, color: theme.colors.invertInk, letterSpacing: 2 },
+
+  legal: { fontFamily: theme.fontFamily.mono, fontSize: 9, color: theme.colors.inkMuted, textAlign: 'center', lineHeight: 16, marginTop: theme.spacing.md, letterSpacing: 0.5 },
 });

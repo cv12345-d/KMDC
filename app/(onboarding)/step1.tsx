@@ -40,66 +40,69 @@ export default function OnboardingStep1() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView contentContainerStyle={styles.inner} keyboardShouldPersistTaps="handled">
-        <View style={styles.progress}>
-          <View style={[styles.dot, styles.dotActive]} />
-          <View style={styles.dot} />
-          <View style={styles.dot} />
+    <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView contentContainerStyle={s.inner} keyboardShouldPersistTaps="handled">
+
+        {/* ── PROGRESS ── */}
+        <View style={s.progress}>
+          <View style={[s.tick, s.tickOn]} />
+          <View style={s.tick} />
+          <View style={s.tick} />
+          <View style={s.tick} />
         </View>
+        <Text style={s.stepLabel}>ÉTAPE 1 / 4</Text>
 
-        <Text style={styles.title}>{strings.onboarding.step1Title}</Text>
-        <Text style={styles.subtitle}>{strings.onboarding.step1Subtitle}</Text>
+        {/* ── HEADER ── */}
+        <View style={s.header}>
+          <Text style={s.title}>{strings.onboarding.step1Title}</Text>
+        </View>
+        <View style={s.divider} />
 
-        <View style={styles.form}>
-          <Text style={styles.label}>{strings.onboarding.labelAge}</Text>
-          <TextInput
-            style={styles.input}
-            value={age}
-            onChangeText={setAge}
-            placeholder={strings.onboarding.placeholderAge}
-            placeholderTextColor={theme.colors.textMuted}
-            keyboardType="number-pad"
-            accessibilityLabel={strings.onboarding.labelAge}
-          />
+        <Text style={s.subtitle}>{strings.onboarding.step1Subtitle}</Text>
+
+        {/* ── FORM ── */}
+        <View style={s.form}>
+          <View style={s.field}>
+            <Text style={s.label}>{strings.onboarding.labelAge.toUpperCase()}</Text>
+            <TextInput
+              style={s.input}
+              value={age}
+              onChangeText={setAge}
+              placeholder={strings.onboarding.placeholderAge}
+              placeholderTextColor={theme.colors.inkMuted}
+              keyboardType="number-pad"
+              accessibilityLabel={strings.onboarding.labelAge}
+            />
+          </View>
 
           <TouchableOpacity
-            style={[styles.disclaimerRow, disclaimerAccepted && styles.disclaimerRowAccepted]}
+            style={[s.disclaimerRow, disclaimerAccepted && s.disclaimerRowOn]}
             onPress={() => disclaimerAccepted ? setDisclaimerAccepted(false) : setShowDisclaimer(true)}
-            accessibilityLabel={strings.onboarding.disclaimerTitle}
           >
-            <View style={[styles.checkbox, disclaimerAccepted && styles.checkboxChecked]}>
-              {disclaimerAccepted && <Text style={styles.checkmark}>✓</Text>}
+            <View style={[s.checkbox, disclaimerAccepted && s.checkboxOn]}>
+              {disclaimerAccepted && <Text style={s.checkmark}>✓</Text>}
             </View>
-            <Text style={styles.disclaimerLabel}>{strings.onboarding.disclaimerTitle}</Text>
+            <Text style={s.disclaimerLabel}>{strings.onboarding.disclaimerTitle}</Text>
           </TouchableOpacity>
 
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+          {error ? <Text style={s.error}>{error}</Text> : null}
 
-          <TouchableOpacity
-            style={styles.btn}
-            onPress={handleNext}
-            accessibilityLabel={strings.onboarding.btnNext}
-          >
-            <Text style={styles.btnText}>{strings.onboarding.btnNext}</Text>
+          <TouchableOpacity style={s.btn} onPress={handleNext}>
+            <Text style={s.btnText}>{strings.onboarding.btnNext.toUpperCase()}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
 
       <Modal visible={showDisclaimer} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>{strings.onboarding.disclaimerTitle}</Text>
-            <Text style={styles.modalText}>{strings.onboarding.disclaimerText}</Text>
+        <View style={s.modalOverlay}>
+          <View style={s.modalCard}>
+            <Text style={s.modalTitle}>{strings.onboarding.disclaimerTitle}</Text>
+            <Text style={s.modalText}>{strings.onboarding.disclaimerText}</Text>
             <TouchableOpacity
-              style={styles.modalBtn}
+              style={s.modalBtn}
               onPress={() => { setDisclaimerAccepted(true); setShowDisclaimer(false); }}
-              accessibilityLabel={strings.onboarding.disclaimerAccept}
             >
-              <Text style={styles.modalBtnText}>{strings.onboarding.disclaimerAccept}</Text>
+              <Text style={s.modalBtnText}>{strings.onboarding.disclaimerAccept.toUpperCase()}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -108,64 +111,45 @@ export default function OnboardingStep1() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  inner: { padding: theme.spacing.lg, paddingTop: theme.spacing.xxl },
-  progress: { flexDirection: 'row', gap: 8, marginBottom: theme.spacing.xl },
-  dot: {
-    width: 8, height: 8, borderRadius: 4,
-    backgroundColor: theme.colors.border,
-  },
-  dotActive: { backgroundColor: theme.colors.primary, width: 24 },
-  title: { fontSize: theme.fontSize.xxl, color: theme.colors.textDark, marginBottom: theme.spacing.sm },
-  subtitle: {
-    fontSize: theme.fontSize.sm, color: theme.colors.textMuted,
-    fontStyle: 'italic', lineHeight: 22, marginBottom: theme.spacing.xl,
-  },
-  form: { gap: theme.spacing.sm },
-  label: { fontSize: theme.fontSize.sm, color: theme.colors.textSoft, marginBottom: 2 },
+const s = StyleSheet.create({
+  root:  { flex: 1, backgroundColor: theme.colors.app },
+  inner: { paddingHorizontal: theme.spacing.lg, paddingTop: theme.spacing.xxl, paddingBottom: theme.spacing.xl },
+
+  progress:  { flexDirection: 'row', gap: 6, marginBottom: 8 },
+  tick:      { flex: 1, height: 3, backgroundColor: theme.colors.line },
+  tickOn:    { backgroundColor: theme.colors.ink },
+  stepLabel: { fontFamily: theme.fontFamily.mono, fontSize: 9, color: theme.colors.inkMuted, letterSpacing: 2, marginBottom: theme.spacing.lg },
+
+  header:  { paddingBottom: theme.spacing.lg },
+  title:   { fontFamily: theme.fontFamily.display, fontSize: theme.fontSize.display, lineHeight: theme.fontSize.display * 0.9, color: theme.colors.ink, letterSpacing: -2 },
+  divider: { height: 1, backgroundColor: theme.colors.ink, marginBottom: theme.spacing.lg },
+  subtitle:{ fontFamily: theme.fontFamily.mono, fontSize: theme.fontSize.xs, color: theme.colors.inkMuted, letterSpacing: 0.5, lineHeight: 18, marginBottom: theme.spacing.xl },
+
+  form:  { gap: theme.spacing.md },
+  field: { gap: 6 },
+  label: { fontFamily: theme.fontFamily.mono, fontSize: 9, color: theme.colors.inkMuted, letterSpacing: 2 },
   input: {
-    backgroundColor: theme.colors.inputBg,
-    borderWidth: 1.5, borderColor: theme.colors.border,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md, fontSize: theme.fontSize.md,
-    color: theme.colors.textDark, marginBottom: theme.spacing.sm,
-    minHeight: theme.touchTarget,
+    fontFamily: theme.fontFamily.display, fontSize: theme.fontSize.md,
+    color: theme.colors.ink,
+    borderBottomWidth: 1, borderBottomColor: theme.colors.ink,
+    paddingVertical: 10, minHeight: theme.touchTarget,
   },
-  disclaimerRow: {
-    flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm,
-    padding: theme.spacing.md, borderWidth: 1.5, borderColor: theme.colors.border,
-    borderRadius: theme.borderRadius.md, marginBottom: theme.spacing.sm,
-  },
-  disclaimerRowAccepted: { borderColor: theme.colors.primary, backgroundColor: theme.colors.backgroundHeader },
-  checkbox: {
-    width: 22, height: 22, borderRadius: 6,
-    borderWidth: 1.5, borderColor: theme.colors.border,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  checkboxChecked: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
-  checkmark: { color: '#FFF', fontSize: 13 },
-  disclaimerLabel: { flex: 1, fontSize: theme.fontSize.sm, color: theme.colors.textSoft },
-  error: { fontSize: theme.fontSize.sm, color: '#C0392B', marginBottom: theme.spacing.sm },
-  btn: {
-    backgroundColor: theme.colors.primary, borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md, alignItems: 'center',
-    minHeight: theme.touchTarget, marginTop: theme.spacing.sm,
-  },
-  btnText: { color: '#FFF', fontSize: theme.fontSize.md },
-  modalOverlay: {
-    flex: 1, backgroundColor: 'rgba(0,0,0,0.45)',
-    alignItems: 'center', justifyContent: 'center', padding: theme.spacing.lg,
-  },
-  modalCard: {
-    backgroundColor: theme.colors.background, borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.xl, gap: theme.spacing.md,
-  },
-  modalTitle: { fontSize: theme.fontSize.lg, color: theme.colors.textDark },
-  modalText: { fontSize: theme.fontSize.sm, color: theme.colors.textSoft, lineHeight: 22 },
-  modalBtn: {
-    backgroundColor: theme.colors.primary, borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md, alignItems: 'center', minHeight: theme.touchTarget,
-  },
-  modalBtnText: { color: '#FFF', fontSize: theme.fontSize.md },
+
+  disclaimerRow:   { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderTopWidth: 1, borderBottomWidth: 1, borderColor: theme.colors.line },
+  disclaimerRowOn: { borderColor: theme.colors.ink },
+  checkbox:    { width: 22, height: 22, borderWidth: 1.5, borderColor: theme.colors.line, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  checkboxOn:  { backgroundColor: theme.colors.ink, borderColor: theme.colors.ink },
+  checkmark:   { color: theme.colors.invertInk, fontSize: 13 },
+  disclaimerLabel: { flex: 1, fontFamily: theme.fontFamily.display, fontSize: theme.fontSize.sm, color: theme.colors.inkMid },
+
+  error:       { fontFamily: theme.fontFamily.mono, fontSize: theme.fontSize.xs, color: '#C0392B' },
+  btn:         { backgroundColor: theme.colors.ink, padding: theme.spacing.md, alignItems: 'center', minHeight: theme.touchTarget },
+  btnText:     { fontFamily: theme.fontFamily.mono, fontSize: theme.fontSize.xs, color: theme.colors.invertInk, letterSpacing: 2 },
+
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(18,30,48,0.6)', alignItems: 'center', justifyContent: 'center', padding: theme.spacing.lg },
+  modalCard:    { backgroundColor: theme.colors.app, padding: theme.spacing.xl, gap: theme.spacing.md, width: '100%' },
+  modalTitle:   { fontFamily: theme.fontFamily.display, fontSize: theme.fontSize.xl, color: theme.colors.ink, letterSpacing: -0.5 },
+  modalText:    { fontFamily: theme.fontFamily.mono, fontSize: theme.fontSize.xs, color: theme.colors.inkMuted, lineHeight: 18, letterSpacing: 0.3 },
+  modalBtn:     { backgroundColor: theme.colors.ink, padding: theme.spacing.md, alignItems: 'center', minHeight: theme.touchTarget },
+  modalBtnText: { fontFamily: theme.fontFamily.mono, fontSize: theme.fontSize.xs, color: theme.colors.invertInk, letterSpacing: 2 },
 });

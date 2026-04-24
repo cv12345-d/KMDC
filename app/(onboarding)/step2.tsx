@@ -10,12 +10,12 @@ import { strings } from '../../lib/strings';
 export default function OnboardingStep2() {
   const { age } = useLocalSearchParams<{ age: string }>();
 
-  const [weight, setWeight]     = useState('');
-  const [target, setTarget]     = useState('');
-  const [height, setHeight]     = useState('');
-  const [waist, setWaist]       = useState('');
-  const [hips, setHips]         = useState('');
-  const [error, setError]       = useState('');
+  const [weight, setWeight] = useState('');
+  const [target, setTarget] = useState('');
+  const [height, setHeight] = useState('');
+  const [waist,  setWaist]  = useState('');
+  const [hips,   setHips]   = useState('');
+  const [error,  setError]  = useState('');
 
   function handleNext() {
     setError('');
@@ -33,80 +33,51 @@ export default function OnboardingStep2() {
     }
 
     router.push({
-      pathname: '/(onboarding)/step3',
+      pathname: '/(onboarding)/health',
       params: {
         age,
         weight: String(w),
         target: String(t),
         height: String(h),
-        waist:  waist  ? String(parseInt(waist, 10))  : '',
-        hips:   hips   ? String(parseInt(hips, 10))   : '',
+        waist:  waist ? String(parseInt(waist, 10)) : '',
+        hips:   hips  ? String(parseInt(hips, 10))  : '',
       },
     });
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView contentContainerStyle={styles.inner} keyboardShouldPersistTaps="handled">
-        <View style={styles.progress}>
-          <View style={[styles.dot, styles.dotDone]} />
-          <View style={[styles.dot, styles.dotActive]} />
-          <View style={styles.dot} />
+    <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView contentContainerStyle={s.inner} keyboardShouldPersistTaps="handled">
+
+        {/* ── PROGRESS ── */}
+        <View style={s.progress}>
+          <View style={[s.tick, s.tickDone]} />
+          <View style={[s.tick, s.tickOn]} />
+          <View style={s.tick} />
+          <View style={s.tick} />
         </View>
+        <Text style={s.stepLabel}>ÉTAPE 2 / 4</Text>
 
-        <Text style={styles.title}>{strings.onboarding.step2Title}</Text>
-        <Text style={styles.subtitle}>{strings.onboarding.step2Subtitle}</Text>
+        {/* ── HEADER ── */}
+        <View style={s.header}>
+          <Text style={s.title}>{strings.onboarding.step2Title}</Text>
+        </View>
+        <View style={s.divider} />
 
-        <View style={styles.form}>
-          <Field
-            label={strings.onboarding.labelWeight}
-            value={weight}
-            onChange={setWeight}
-            placeholder={strings.onboarding.placeholderWeight}
-            unit="kg"
-          />
-          <Field
-            label={strings.onboarding.labelTargetWeight}
-            value={target}
-            onChange={setTarget}
-            placeholder={strings.onboarding.placeholderWeight}
-            unit="kg"
-          />
-          <Field
-            label={strings.onboarding.labelHeight}
-            value={height}
-            onChange={setHeight}
-            placeholder={strings.onboarding.placeholderHeight}
-            unit="cm"
-          />
-          <Field
-            label={strings.onboarding.labelWaist}
-            value={waist}
-            onChange={setWaist}
-            placeholder={strings.onboarding.placeholderMeasure}
-            unit="cm"
-            optional
-          />
-          <Field
-            label={strings.onboarding.labelHips}
-            value={hips}
-            onChange={setHips}
-            placeholder={strings.onboarding.placeholderMeasure}
-            unit="cm"
-            optional
-          />
+        <Text style={s.subtitle}>{strings.onboarding.step2Subtitle}</Text>
 
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+        {/* ── FORM ── */}
+        <View style={s.form}>
+          <Field label={strings.onboarding.labelWeight}       value={weight} onChange={setWeight} placeholder={strings.onboarding.placeholderWeight} unit="kg" />
+          <Field label={strings.onboarding.labelTargetWeight} value={target} onChange={setTarget} placeholder={strings.onboarding.placeholderWeight} unit="kg" />
+          <Field label={strings.onboarding.labelHeight}       value={height} onChange={setHeight} placeholder={strings.onboarding.placeholderHeight} unit="cm" />
+          <Field label={strings.onboarding.labelWaist}        value={waist}  onChange={setWaist}  placeholder={strings.onboarding.placeholderMeasure} unit="cm" optional />
+          <Field label={strings.onboarding.labelHips}         value={hips}   onChange={setHips}   placeholder={strings.onboarding.placeholderMeasure} unit="cm" optional />
 
-          <TouchableOpacity
-            style={styles.btn}
-            onPress={handleNext}
-            accessibilityLabel={strings.onboarding.btnNext}
-          >
-            <Text style={styles.btnText}>{strings.onboarding.btnNext}</Text>
+          {error ? <Text style={s.error}>{error}</Text> : null}
+
+          <TouchableOpacity style={s.btn} onPress={handleNext}>
+            <Text style={s.btnText}>{strings.onboarding.btnNext.toUpperCase()}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -117,66 +88,58 @@ export default function OnboardingStep2() {
 function Field({
   label, value, onChange, placeholder, unit, optional,
 }: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder: string;
-  unit: string;
-  optional?: boolean;
+  label: string; value: string; onChange: (v: string) => void;
+  placeholder: string; unit: string; optional?: boolean;
 }) {
   return (
-    <View style={fieldStyles.wrapper}>
-      <View style={fieldStyles.labelRow}>
-        <Text style={fieldStyles.label}>{label}</Text>
-        {optional && <Text style={fieldStyles.optional}>{strings.onboarding.optionalHint}</Text>}
+    <View style={f.wrapper}>
+      <View style={f.labelRow}>
+        <Text style={f.label}>{label.toUpperCase()}</Text>
+        {optional && <Text style={f.optional}>{strings.onboarding.optionalHint}</Text>}
       </View>
-      <View style={fieldStyles.inputRow}>
+      <View style={f.inputRow}>
         <TextInput
-          style={fieldStyles.input}
+          style={f.input}
           value={value}
           onChangeText={onChange}
           placeholder={placeholder}
-          placeholderTextColor={theme.colors.textMuted}
+          placeholderTextColor={theme.colors.inkMuted}
           keyboardType="decimal-pad"
           accessibilityLabel={label}
         />
-        <Text style={fieldStyles.unit}>{unit}</Text>
+        <Text style={f.unit}>{unit}</Text>
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  inner: { padding: theme.spacing.lg, paddingTop: theme.spacing.xxl },
-  progress: { flexDirection: 'row', gap: 8, marginBottom: theme.spacing.xl },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: theme.colors.border },
-  dotActive: { backgroundColor: theme.colors.primary, width: 24 },
-  dotDone:   { backgroundColor: theme.colors.accent },
-  title:    { fontSize: theme.fontSize.xxl, color: theme.colors.textDark, marginBottom: theme.spacing.sm },
-  subtitle: { fontSize: theme.fontSize.sm, color: theme.colors.textMuted, fontStyle: 'italic', lineHeight: 22, marginBottom: theme.spacing.xl },
-  form:     { gap: theme.spacing.xs },
-  error:    { fontSize: theme.fontSize.sm, color: '#C0392B', marginTop: theme.spacing.sm },
-  btn: {
-    backgroundColor: theme.colors.primary, borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md, alignItems: 'center',
-    minHeight: theme.touchTarget, marginTop: theme.spacing.md,
-  },
-  btnText: { color: '#FFF', fontSize: theme.fontSize.md },
+const s = StyleSheet.create({
+  root:  { flex: 1, backgroundColor: theme.colors.app },
+  inner: { paddingHorizontal: theme.spacing.lg, paddingTop: theme.spacing.xxl, paddingBottom: theme.spacing.xl },
+
+  progress:  { flexDirection: 'row', gap: 6, marginBottom: 8 },
+  tick:      { flex: 1, height: 3, backgroundColor: theme.colors.line },
+  tickOn:    { backgroundColor: theme.colors.ink },
+  tickDone:  { backgroundColor: theme.colors.inkSoft },
+  stepLabel: { fontFamily: theme.fontFamily.mono, fontSize: 9, color: theme.colors.inkMuted, letterSpacing: 2, marginBottom: theme.spacing.lg },
+
+  header:  { paddingBottom: theme.spacing.lg },
+  title:   { fontFamily: theme.fontFamily.display, fontSize: theme.fontSize.display, lineHeight: theme.fontSize.display * 0.9, color: theme.colors.ink, letterSpacing: -2 },
+  divider: { height: 1, backgroundColor: theme.colors.ink, marginBottom: theme.spacing.lg },
+  subtitle:{ fontFamily: theme.fontFamily.mono, fontSize: theme.fontSize.xs, color: theme.colors.inkMuted, letterSpacing: 0.5, lineHeight: 18, marginBottom: theme.spacing.xl },
+
+  form:    { gap: theme.spacing.md },
+  error:   { fontFamily: theme.fontFamily.mono, fontSize: theme.fontSize.xs, color: '#C0392B' },
+  btn:     { backgroundColor: theme.colors.ink, padding: theme.spacing.md, alignItems: 'center', minHeight: theme.touchTarget },
+  btnText: { fontFamily: theme.fontFamily.mono, fontSize: theme.fontSize.xs, color: theme.colors.invertInk, letterSpacing: 2 },
 });
 
-const fieldStyles = StyleSheet.create({
-  wrapper:   { marginBottom: theme.spacing.sm },
-  labelRow:  { flexDirection: 'row', alignItems: 'center', marginBottom: 6, gap: 8 },
-  label:     { fontSize: theme.fontSize.sm, color: theme.colors.textSoft },
-  optional:  { fontSize: theme.fontSize.xs, color: theme.colors.textMuted, fontStyle: 'italic' },
-  inputRow:  { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
-  input: {
-    flex: 1, backgroundColor: theme.colors.inputBg,
-    borderWidth: 1.5, borderColor: theme.colors.border,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md, fontSize: theme.fontSize.md,
-    color: theme.colors.textDark, minHeight: theme.touchTarget,
-  },
-  unit: { fontSize: theme.fontSize.sm, color: theme.colors.textMuted, width: 28 },
+const f = StyleSheet.create({
+  wrapper:  { gap: 6 },
+  labelRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  label:    { fontFamily: theme.fontFamily.mono, fontSize: 9, color: theme.colors.inkMuted, letterSpacing: 2 },
+  optional: { fontFamily: theme.fontFamily.mono, fontSize: 9, color: theme.colors.inkMuted, fontStyle: 'italic' },
+  inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, borderBottomWidth: 1, borderBottomColor: theme.colors.ink, paddingBottom: 6 },
+  input:    { flex: 1, fontFamily: theme.fontFamily.display, fontSize: theme.fontSize.md, color: theme.colors.ink, minHeight: theme.touchTarget, paddingVertical: 4 },
+  unit:     { fontFamily: theme.fontFamily.mono, fontSize: theme.fontSize.xs, color: theme.colors.inkMuted, paddingBottom: 4 },
 });

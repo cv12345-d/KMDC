@@ -21,9 +21,11 @@ export default function TabsLayout() {
     >
       <Tabs.Screen name="home"     options={{ title: strings.tabs.home     }} />
       <Tabs.Screen name="journal"  options={{ title: strings.tabs.journal  }} />
+      <Tabs.Screen name="cycle"    options={{ title: strings.tabs.cycle    }} />
       <Tabs.Screen name="aliments" options={{ title: strings.tabs.aliments }} />
       <Tabs.Screen name="suivi"    options={{ title: strings.tabs.suivi    }} />
-      <Tabs.Screen name="settings" options={{ title: strings.tabs.settings }} />
+      <Tabs.Screen name="tips"     options={{ title: strings.tabs.tips     }} />
+      <Tabs.Screen name="settings" options={{ title: strings.tabs.settings, tabBarButton: () => null }} />
     </Tabs>
   );
 }

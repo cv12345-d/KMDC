@@ -54,3 +54,26 @@ export async function cancelWeightReminder(): Promise<void> {
 export async function cancelJournalReminder(): Promise<void> {
   await Notifications.cancelScheduledNotificationAsync('journal-reminder').catch(() => {});
 }
+
+export async function scheduleExamReminder(examType: string, label: string, dueDate: Date): Promise<void> {
+  const id = `exam-${examType}`;
+  await Notifications.cancelScheduledNotificationAsync(id).catch(() => {});
+  const triggerDate = new Date(dueDate);
+  triggerDate.setDate(triggerDate.getDate() - 30);
+  if (triggerDate <= new Date()) return;
+  await Notifications.scheduleNotificationAsync({
+    identifier: id,
+    content: {
+      title: 'Examen à planifier',
+      body: `${label} prévu dans 30 jours. Pensez à prendre rendez-vous.`,
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DATE,
+      date: triggerDate,
+    },
+  });
+}
+
+export async function cancelExamReminder(examType: string): Promise<void> {
+  await Notifications.cancelScheduledNotificationAsync(`exam-${examType}`).catch(() => {});
+}

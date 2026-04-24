@@ -11,7 +11,7 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#F4F6FA"
+      "backgroundColor": "#F2EDE3"
     },
     "ios": {
       "supportsTablet": false,
@@ -21,7 +21,7 @@
       "package": "be.iagency.kmdc",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#F4F6FA"
+        "backgroundColor": "#121E30"
       },
       "edgeToEdgeEnabled": true
     },
@@ -37,7 +37,8 @@
           "icon": "./assets/icon.png",
           "color": "#4A6B9A"
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true

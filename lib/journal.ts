@@ -39,6 +39,30 @@ export async function getTodayEntry(userId: string): Promise<JournalEntry | null
   return data;
 }
 
+export async function getRecentEntries(userId: string, limit = 7): Promise<JournalEntry[]> {
+  const { data, error } = await supabase
+    .from('journal_entries')
+    .select('id, date_jour, humeur, reussite, energie_gain, energie_perte, intention_demain')
+    .eq('user_id', userId)
+    .lt('date_jour', todayISO())
+    .order('date_jour', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function getEntriesInRange(userId: string, from: string, to: string): Promise<JournalEntry[]> {
+  const { data, error } = await supabase
+    .from('journal_entries')
+    .select('id, date_jour, humeur, reussite, energie_gain, energie_perte, intention_demain')
+    .eq('user_id', userId)
+    .gte('date_jour', from)
+    .lte('date_jour', to)
+    .order('date_jour', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function saveJournalEntry(userId: string, draft: JournalDraft): Promise<void> {
   const row = {
     user_id:          userId,

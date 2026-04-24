@@ -1,40 +1,18 @@
-// Phase duration rules — to be validated by a nutritionist
-// Based on 0.5 kg/week loss rate for women 45+
+export type PhaseName = 'preparation' | 'reset' | 'destockage' | 'reinsertion' | 'equilibre';
 
-export type PhaseName = 'offensive' | 'destockage' | 'stabilisation';
+export const PREPARATION_DAYS       = 7;
+export const RESET_DAYS             = 5;
+export const DESTOCKAGE_TRIGGER_PCT = 70;
+export const REINSERTION_DAYS_MIN   = 28; // 4 semaines minimum
 
-export interface PhaseCalculation {
-  offensiveWeeks: number;
-  destockageWeeks: number;
-}
-
-/** Returns offensive phase duration in weeks based on kg to lose. */
-export function getOffensiveWeeks(kgToLose: number): number {
-  if (kgToLose <= 4)  return 6;
-  if (kgToLose <= 8)  return 10;
-  if (kgToLose <= 12) return 14;
-  if (kgToLose <= 16) return 18;
-  return 22;
-}
-
-/** Returns déstockage phase duration in weeks (offensive ÷ 2, rounded up to full months). */
-export function getDestockageWeeks(offensiveWeeks: number): number {
-  const raw = offensiveWeeks / 2;
-  const months = Math.ceil(raw / 4);
-  return months * 4;
-}
-
-export function calculatePhases(poids_initial: number, poids_objectif: number): PhaseCalculation {
-  const kgToLose = Math.max(0, poids_initial - poids_objectif);
-  const offensiveWeeks = getOffensiveWeeks(kgToLose);
-  const destockageWeeks = getDestockageWeeks(offensiveWeeks);
-  return { offensiveWeeks, destockageWeeks };
+export function addDays(date: Date, days: number): Date {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
 }
 
 export function addWeeks(date: Date, weeks: number): Date {
-  const result = new Date(date);
-  result.setDate(result.getDate() + weeks * 7);
-  return result;
+  return addDays(date, weeks * 7);
 }
 
 export function formatDateISO(date: Date): string {
@@ -43,8 +21,60 @@ export function formatDateISO(date: Date): string {
 
 export function phaseLabelFr(phase: PhaseName): string {
   switch (phase) {
-    case 'offensive':     return 'Phase offensive';
-    case 'destockage':    return 'Phase de déstockage';
-    case 'stabilisation': return 'Stabilisation';
+    case 'preparation': return 'Préparation';
+    case 'reset':       return 'Reset';
+    case 'destockage':  return 'Déstockage actif';
+    case 'reinsertion': return 'Réintroduction';
+    case 'equilibre':   return 'Équilibre de vie';
   }
+}
+
+export function phaseNumberFr(phase: PhaseName): string {
+  switch (phase) {
+    case 'preparation': return 'PHASE 1';
+    case 'reset':       return 'PHASE 2';
+    case 'destockage':  return 'PHASE 3';
+    case 'reinsertion': return 'PHASE 4';
+    case 'equilibre':   return 'PHASE 5';
+  }
+}
+
+export function phaseListsFr(phase: PhaseName): string {
+  switch (phase) {
+    case 'preparation': return 'Toutes les listes';
+    case 'reset':       return 'Liste verte uniquement';
+    case 'destockage':  return 'Listes verte + jaune';
+    case 'reinsertion': return 'Verte + jaune + orange progressif';
+    case 'equilibre':   return 'Toutes les listes, avec discernement';
+  }
+}
+
+export function nextPhase(phase: PhaseName): PhaseName | null {
+  switch (phase) {
+    case 'preparation': return 'reset';
+    case 'reset':       return 'destockage';
+    case 'destockage':  return 'reinsertion';
+    case 'reinsertion': return 'equilibre';
+    case 'equilibre':   return null;
+  }
+}
+
+export function isTransitionReady(
+  phase: PhaseName,
+  daysDone: number,
+  weightPct = 0,
+): boolean {
+  switch (phase) {
+    case 'preparation': return daysDone >= PREPARATION_DAYS;
+    case 'reset':       return daysDone >= RESET_DAYS;
+    case 'destockage':  return weightPct >= DESTOCKAGE_TRIGGER_PCT;
+    case 'reinsertion': return daysDone >= REINSERTION_DAYS_MIN;
+    case 'equilibre':   return false;
+  }
+}
+
+export function orangeRhythmFr(daysDone: number): string {
+  if (daysDone < 14) return 'Orange 1 jour sur 3';
+  if (daysDone < 28) return 'Orange 1 jour sur 2';
+  return 'Selon votre équilibre';
 }
