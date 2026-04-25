@@ -32,17 +32,17 @@ export default function PaywallScreen() {
       {/* Hero */}
       <View style={s.hero}>
         <View style={s.inkBlock}>
-          <Text style={s.heroEyebrow}>MÉTHODE KMDC · PREMIUM</Text>
+          <Text style={s.heroEyebrow}>7 JOURS GRATUITS · ACCÈS COMPLET</Text>
           <Text style={s.heroTitle}>Allez plus{'\n'}loin.</Text>
           <Text style={s.heroSub}>
-            La méthode complète est gratuite. Premium débloque la profondeur, la personnalisation et le suivi sur la durée.
+            Découvrez la méthode pendant 7 jours, puis un seul paiement pour un accès à vie. Pas d'abonnement, pas de renouvellement.
           </Text>
         </View>
       </View>
 
       {/* Features */}
       <View style={s.body}>
-        <Text style={s.sectionLabel}>INCLUS DANS LA VERSION PREMIUM</Text>
+        <Text style={s.sectionLabel}>CE QUE VOUS DÉBLOQUEZ</Text>
         <View style={s.inkDivider} />
 
         {FEATURES.map(f => (
@@ -57,34 +57,24 @@ export default function PaywallScreen() {
 
         {/* Prix */}
         <View style={s.priceBlock}>
-          <Text style={s.priceLabel}>ABONNEMENT MENSUEL</Text>
-          <Text style={s.price}>4,99 €</Text>
-          <Text style={s.priceSub}>par mois · résiliable à tout moment</Text>
+          <Text style={s.priceLabel}>APRÈS LES 7 JOURS GRATUITS</Text>
+          <Text style={s.price}>24,99 €</Text>
+          <Text style={s.priceSub}>une seule fois · accès à vie</Text>
         </View>
 
         {/* CTA */}
         <TouchableOpacity
           style={s.btnPrimary}
           onPress={() => {
-            // TODO: déclencher RevenueCat purchase flow
+            // TODO: déclencher RevenueCat purchase flow (avec trial 7 jours)
             alert('Le paiement sera disponible très bientôt.');
           }}
         >
-          <Text style={s.btnPrimaryText}>COMMENCER — 4,99 €/MOIS</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={s.btnGhost}
-          onPress={() => {
-            // TODO: RevenueCat restorePurchases()
-            alert('Restauration disponible après configuration de RevenueCat.');
-          }}
-        >
-          <Text style={s.btnGhostText}>DÉJÀ ABONNÉE ? RESTAURER</Text>
+          <Text style={s.btnPrimaryText}>COMMENCER GRATUITEMENT — 7 JOURS</Text>
         </TouchableOpacity>
 
         <Text style={s.legal}>
-          Le paiement in-app sera activé lors du lancement officiel. En beta, contactez-nous pour activer votre accès Premium.
+          Aucun paiement n'est demandé pendant les 7 premiers jours. Le paiement in-app sera activé lors du lancement officiel. En beta, contactez-nous pour activer votre accès.
         </Text>
       </View>
 
