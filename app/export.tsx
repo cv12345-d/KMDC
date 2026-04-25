@@ -187,7 +187,7 @@ export default function ExportScreen() {
             <View style={s.premiumBlock}>
               <Text style={s.premiumEyebrow}>FONCTIONNALITÉ PREMIUM</Text>
               <Text style={s.premiumText}>
-                L'export PDF est disponible avec l'abonnement Premium à 4,99 €/mois.
+                L'export PDF est inclus dans l'accès Premium à 24,99 € — 7 jours gratuits, puis paiement unique à vie.
               </Text>
             </View>
             <TouchableOpacity style={s.btnUpgrade} onPress={() => router.push('/paywall')} activeOpacity={0.85}>

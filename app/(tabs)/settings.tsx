@@ -99,7 +99,7 @@ export default function SettingsScreen() {
               <Text style={s.rowNum}>→</Text>
               <View style={s.rowText}>
                 <Text style={s.rowLabel}>Passer à la version Premium</Text>
-                <Text style={s.rowSub}>HISTORIQUE · EXPORT PDF · RECETTES · 4,99 €/MOIS</Text>
+                <Text style={s.rowSub}>HISTORIQUE · EXPORT PDF · RECETTES · 7 JOURS GRATUITS PUIS 24,99 € À VIE</Text>
               </View>
             </TouchableOpacity>
           )}
@@ -113,7 +113,7 @@ export default function SettingsScreen() {
             <Text style={s.rowNum}>→</Text>
             <View style={s.rowText}>
               <Text style={s.rowLabel}>Rapport PDF médecin</Text>
-              <Text style={s.rowSub}>POIDS · MESURES · HUMEUR · {isPremium ? 'PREMIUM ACTIF' : '4,99 €/MOIS'}</Text>
+              <Text style={s.rowSub}>POIDS · MESURES · HUMEUR · {isPremium ? 'PREMIUM ACTIF' : 'INCLUS PREMIUM'}</Text>
             </View>
           </TouchableOpacity>
         </View>
