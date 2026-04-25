@@ -3,13 +3,14 @@ import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   FlatList, ActivityIndicator, Alert,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { theme } from '../../lib/theme';
 import { strings } from '../../lib/strings';
 import { getFoods, type Food, type FoodList } from '../../lib/foods';
+import { getCustomFoods, customToFood, deleteCustomFood } from '../../lib/custom_foods';
 import { getUser } from '../../lib/auth';
 import { getCurrentPhase } from '../../lib/parcours';
 import { type PhaseName } from '../../lib/phases';
@@ -48,9 +49,6 @@ export default function AlimentsScreen() {
   const [exporting,    setExporting]    = useState(false);
 
   useEffect(() => {
-    getFoods()
-      .then(setFoods)
-      .finally(() => setLoading(false));
     AsyncStorage.getItem(SHOPPING_KEY).then(stored => {
       if (stored) setSelected(new Set(JSON.parse(stored)));
     });
@@ -58,12 +56,44 @@ export default function AlimentsScreen() {
 
   useFocusEffect(useCallback(() => {
     (async () => {
-      const user = await getUser();
-      if (!user) return;
-      const phase = await getCurrentPhase(user.id);
-      setCurrentPhase(phase?.phase ?? null);
+      try {
+        const user = await getUser();
+        const [globalFoods, customFoods] = await Promise.all([
+          getFoods(),
+          user ? getCustomFoods(user.id) : Promise.resolve([]),
+        ]);
+        const merged: Food[] = [...customFoods.map(customToFood), ...globalFoods];
+        setFoods(merged);
+        if (user) {
+          const phase = await getCurrentPhase(user.id);
+          setCurrentPhase(phase?.phase ?? null);
+        }
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []));
+
+  async function handleDeleteCustom(id: string) {
+    const realId = id.replace(/^custom_/, '');
+    Alert.alert(
+      'Supprimer cet aliment ?',
+      'Il sera retiré de vos aliments personnels.',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        { text: 'Supprimer', style: 'destructive', onPress: async () => {
+          await deleteCustomFood(realId);
+          setFoods(prev => prev.filter(f => f.id !== id));
+          setSelected(prev => {
+            const next = new Set(prev);
+            next.delete(id);
+            AsyncStorage.setItem(SHOPPING_KEY, JSON.stringify([...next]));
+            return next;
+          });
+        }},
+      ]
+    );
+  }
 
   async function toggleSelect(id: string) {
     const next = new Set(selected);
@@ -112,7 +142,12 @@ export default function AlimentsScreen() {
 
       {/* ── HEADER ── */}
       <View style={s.header}>
-        <Text style={s.eyebrow}>ALIMENTATION</Text>
+        <View style={s.headerTopRow}>
+          <Text style={s.eyebrow}>ALIMENTATION</Text>
+          <TouchableOpacity onPress={() => router.push('/add-food' as never)} style={s.addBtn}>
+            <Text style={s.addBtnText}>+ AJOUTER</Text>
+          </TouchableOpacity>
+        </View>
         <Text style={s.title}>Listes{'\n'}aliments.</Text>
       </View>
 
@@ -167,7 +202,12 @@ export default function AlimentsScreen() {
         contentContainerStyle={[s.list, selected.size > 0 && s.listWithFooter]}
         ListEmptyComponent={<Text style={s.empty}>{strings.foods.emptySearch}</Text>}
         renderItem={({ item }) => (
-          <FoodRow food={item} isSelected={selected.has(item.id)} onToggle={() => toggleSelect(item.id)} />
+          <FoodRow
+            food={item}
+            isSelected={selected.has(item.id)}
+            onToggle={() => toggleSelect(item.id)}
+            onLongPress={item.id.startsWith('custom_') ? () => handleDeleteCustom(item.id) : undefined}
+          />
         )}
         keyboardShouldPersistTaps="handled"
       />
@@ -191,11 +231,13 @@ export default function AlimentsScreen() {
   );
 }
 
-function FoodRow({ food, isSelected, onToggle }: { food: Food; isSelected: boolean; onToggle: () => void }) {
+function FoodRow({ food, isSelected, onToggle, onLongPress }: { food: Food; isSelected: boolean; onToggle: () => void; onLongPress?: () => void }) {
+  const isCustom = food.id.startsWith('custom_');
   return (
-    <TouchableOpacity style={[s.row, isSelected && s.rowSelected]} onPress={onToggle} activeOpacity={0.7}>
+    <TouchableOpacity style={[s.row, isSelected && s.rowSelected]} onPress={onToggle} onLongPress={onLongPress} activeOpacity={0.7}>
       <View style={[s.dot, { backgroundColor: LIST_DOT[food.liste] }]} />
       <Text style={[s.rowName, isSelected && s.rowNameSelected]}>{food.nom}</Text>
+      {isCustom && <Text style={s.customTag}>PERSO</Text>}
       {food.ig !== null && food.ig > 0 && (
         <Text style={s.ig}>IG {food.ig}</Text>
       )}
@@ -325,8 +367,11 @@ const s = StyleSheet.create({
   root:    { flex: 1, backgroundColor: theme.colors.app },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center' },
 
-  header:  { paddingTop: theme.spacing.xxl, paddingHorizontal: theme.spacing.lg, paddingBottom: theme.spacing.lg },
-  eyebrow: { fontFamily: theme.fontFamily.mono, fontSize: theme.fontSize.xs, color: theme.colors.inkMuted, letterSpacing: 2, marginBottom: 14 },
+  header:        { paddingTop: theme.spacing.xxl, paddingHorizontal: theme.spacing.lg, paddingBottom: theme.spacing.lg },
+  headerTopRow:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  eyebrow:       { fontFamily: theme.fontFamily.mono, fontSize: theme.fontSize.xs, color: theme.colors.inkMuted, letterSpacing: 2 },
+  addBtn:        { paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: theme.colors.ink },
+  addBtnText:    { fontFamily: theme.fontFamily.mono, fontSize: 9, color: theme.colors.ink, letterSpacing: 1.5 },
   title:   { fontFamily: theme.fontFamily.display, fontSize: theme.fontSize.display, lineHeight: theme.fontSize.display * 0.9, color: theme.colors.ink, letterSpacing: -2 },
 
   divider:     { height: 1, backgroundColor: theme.colors.ink, marginHorizontal: theme.spacing.lg },
@@ -374,6 +419,7 @@ const s = StyleSheet.create({
   dot:             { width: 6, height: 6, flexShrink: 0 },
   rowName:         { flex: 1, fontFamily: theme.fontFamily.display, fontSize: theme.fontSize.md, color: theme.colors.ink },
   rowNameSelected: { fontStyle: 'italic' },
+  customTag:       { fontFamily: theme.fontFamily.mono, fontSize: 8, color: theme.colors.inkSoft, letterSpacing: 1.5, borderWidth: 1, borderColor: theme.colors.line, paddingHorizontal: 5, paddingVertical: 1 },
   ig:              { fontFamily: theme.fontFamily.mono, fontSize: 9, color: theme.colors.inkMuted, letterSpacing: 1 },
   checkbox: {
     width: 22, height: 22, borderWidth: 1.5, borderColor: theme.colors.line,
