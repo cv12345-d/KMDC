@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getUser, getProfile, signOut } from '../../lib/auth';
+import { getUser, getProfile, signOut, createPhaseProgress } from '../../lib/auth';
 import { getTodayEntry as getJournalToday, todayISO } from '../../lib/journal';
 import { getTodayEntry as getWeightToday, getLast30Entries, getStreak } from '../../lib/weight';
 import { getCurrentPhase, type CurrentPhase } from '../../lib/parcours';
@@ -11,6 +11,7 @@ import {
   DESTOCKAGE_TRIGGER_PCT,
   isTransitionReady, nextPhase,
   phaseNumberFr, phaseListsFr, orangeRhythmFr,
+  addDays, formatDateISO,
 } from '../../lib/phases';
 import { getExams, examStatus, formatNextDate, EXAM_CONFIG, type PreventiveExam } from '../../lib/preventive';
 import { theme } from '../../lib/theme';
@@ -50,7 +51,7 @@ export default function HomeScreen() {
       const user = await getUser();
       if (!user) { router.replace('/(auth)/login'); return; }
 
-      const [profile, phase, weightEntry, journalEntry, weightHistory, streak, exams] = await Promise.all([
+      const [profile, phaseInitial, weightEntry, journalEntry, weightHistory, streak, exams] = await Promise.all([
         getProfile(user.id),
         getCurrentPhase(user.id),
         getWeightToday(user.id),
@@ -63,6 +64,20 @@ export default function HomeScreen() {
       if (!profile || !profile.poids_initial_kg) {
         router.replace('/(onboarding)/step1');
         return;
+      }
+
+      let phase = phaseInitial;
+      if (!phase) {
+        const startISO = profile.date_debut_parcours ?? formatDateISO(new Date());
+        const startDate = new Date(startISO);
+        const prepEnd  = addDays(startDate, PREPARATION_DAYS);
+        const resetEnd = addDays(prepEnd, RESET_DAYS);
+        await createPhaseProgress(user.id, [
+          { phase: 'preparation', date_debut: startISO,                date_fin_prevue: formatDateISO(prepEnd)  },
+          { phase: 'reset',       date_debut: formatDateISO(prepEnd),  date_fin_prevue: formatDateISO(resetEnd) },
+          { phase: 'destockage',  date_debut: formatDateISO(resetEnd), date_fin_prevue: null                    },
+        ]);
+        phase = await getCurrentPhase(user.id);
       }
 
       const poidsActuel = weightEntry?.poids_kg
