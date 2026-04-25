@@ -1,15 +1,20 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  FlatList, ActivityIndicator,
+  FlatList, ActivityIndicator, Alert,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import { theme } from '../../lib/theme';
 import { strings } from '../../lib/strings';
 import { getFoods, type Food, type FoodList } from '../../lib/foods';
 import { getUser } from '../../lib/auth';
 import { getCurrentPhase } from '../../lib/parcours';
-import { phaseNumberFr, type PhaseName } from '../../lib/phases';
+import { type PhaseName } from '../../lib/phases';
+
+const SHOPPING_KEY = 'shopping_list_v1';
 
 const LIST_ORDER: FoodList[] = ['verte', 'jaune', 'orange', 'rouge'];
 
@@ -39,11 +44,16 @@ export default function AlimentsScreen() {
   const [filter,       setFilter]       = useState<FoodList | null>(null);
   const [loading,      setLoading]      = useState(true);
   const [currentPhase, setCurrentPhase] = useState<PhaseName | null>(null);
+  const [selected,     setSelected]     = useState<Set<string>>(new Set());
+  const [exporting,    setExporting]    = useState(false);
 
   useEffect(() => {
     getFoods()
       .then(setFoods)
       .finally(() => setLoading(false));
+    AsyncStorage.getItem(SHOPPING_KEY).then(stored => {
+      if (stored) setSelected(new Set(JSON.parse(stored)));
+    });
   }, []);
 
   useFocusEffect(useCallback(() => {
@@ -54,6 +64,36 @@ export default function AlimentsScreen() {
       setCurrentPhase(phase?.phase ?? null);
     })();
   }, []));
+
+  async function toggleSelect(id: string) {
+    const next = new Set(selected);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSelected(next);
+    await AsyncStorage.setItem(SHOPPING_KEY, JSON.stringify([...next]));
+  }
+
+  async function clearList() {
+    setSelected(new Set());
+    await AsyncStorage.removeItem(SHOPPING_KEY);
+  }
+
+  async function exportShoppingList() {
+    if (selected.size === 0) return;
+    setExporting(true);
+    try {
+      const picked = foods.filter(f => selected.has(f.id));
+      const html = buildShoppingListHtml(picked);
+      const { uri } = await Print.printToFileAsync({ html });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: 'Liste de courses' });
+      }
+    } catch (e) {
+      Alert.alert('Erreur', 'Impossible de générer le PDF.');
+      console.error(e);
+    } finally {
+      setExporting(false);
+    }
+  }
 
   const visible = foods.filter(f => {
     const matchSearch = f.nom.toLowerCase().includes(search.toLowerCase());
@@ -124,25 +164,142 @@ export default function AlimentsScreen() {
       <FlatList
         data={visible}
         keyExtractor={item => item.id}
-        contentContainerStyle={s.list}
+        contentContainerStyle={[s.list, selected.size > 0 && s.listWithFooter]}
         ListEmptyComponent={<Text style={s.empty}>{strings.foods.emptySearch}</Text>}
-        renderItem={({ item }) => <FoodRow food={item} />}
+        renderItem={({ item }) => (
+          <FoodRow food={item} isSelected={selected.has(item.id)} onToggle={() => toggleSelect(item.id)} />
+        )}
         keyboardShouldPersistTaps="handled"
       />
+
+      {/* ── FOOTER LISTE DE COURSES ── */}
+      {selected.size > 0 && (
+        <View style={s.footer}>
+          <View style={s.footerInfo}>
+            <Text style={s.footerCount}>{selected.size}</Text>
+            <Text style={s.footerLabel}>{selected.size > 1 ? 'ALIMENTS SÉLECTIONNÉS' : 'ALIMENT SÉLECTIONNÉ'}</Text>
+          </View>
+          <TouchableOpacity style={s.footerClear} onPress={clearList}>
+            <Text style={s.footerClearText}>VIDER</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[s.footerExport, exporting && s.footerExportDisabled]} onPress={exportShoppingList} disabled={exporting}>
+            <Text style={s.footerExportText}>{exporting ? '…' : 'TÉLÉCHARGER'}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
 
-function FoodRow({ food }: { food: Food }) {
+function FoodRow({ food, isSelected, onToggle }: { food: Food; isSelected: boolean; onToggle: () => void }) {
   return (
-    <View style={s.row}>
+    <TouchableOpacity style={[s.row, isSelected && s.rowSelected]} onPress={onToggle} activeOpacity={0.7}>
       <View style={[s.dot, { backgroundColor: LIST_DOT[food.liste] }]} />
-      <Text style={s.rowName}>{food.nom}</Text>
+      <Text style={[s.rowName, isSelected && s.rowNameSelected]}>{food.nom}</Text>
       {food.ig !== null && food.ig > 0 && (
         <Text style={s.ig}>IG {food.ig}</Text>
       )}
-    </View>
+      <View style={[s.checkbox, isSelected && s.checkboxOn]}>
+        {isSelected && <Text style={s.checkmark}>✓</Text>}
+      </View>
+    </TouchableOpacity>
   );
+}
+
+function buildShoppingListHtml(foods: Food[]): string {
+  const byList: Record<FoodList, Food[]> = { verte: [], jaune: [], orange: [], rouge: [] };
+  foods.forEach(f => byList[f.liste].push(f));
+
+  const generatedAt = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  const sections = (['verte', 'jaune', 'orange', 'rouge'] as FoodList[])
+    .filter(l => byList[l].length > 0)
+    .map(l => {
+      const label = LIST_LABEL[l];
+      const color = LIST_DOT[l];
+      const items = byList[l].map(f => `
+        <li>
+          <span class="box"></span>
+          <span class="name">${f.nom}</span>
+          ${f.ig !== null && f.ig > 0 ? `<span class="ig">IG ${f.ig}</span>` : ''}
+        </li>`).join('');
+      return `
+        <div class="section">
+          <div class="section-header">
+            <span class="dot" style="background:${color}"></span>
+            <span class="section-title">LISTE ${label}</span>
+            <span class="section-count">${byList[l].length} aliment${byList[l].length > 1 ? 's' : ''}</span>
+          </div>
+          <ul>${items}</ul>
+        </div>`;
+    }).join('');
+
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 12pt; color: #121E30; background: #fff;
+    padding: 24mm 20mm; line-height: 1.5;
+  }
+  .header { border-bottom: 2px solid #121E30; padding-bottom: 14px; margin-bottom: 24px; }
+  .title { font-size: 28pt; letter-spacing: -1px; margin-bottom: 4px; }
+  .meta {
+    font-family: 'Courier New', monospace; font-size: 8pt;
+    color: #7A6E62; letter-spacing: 1.5px; text-transform: uppercase;
+  }
+  .section { margin-bottom: 22px; page-break-inside: avoid; }
+  .section-header {
+    display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px solid #D4C8B8; padding-bottom: 6px; margin-bottom: 10px;
+  }
+  .dot { display: inline-block; width: 10px; height: 10px; }
+  .section-title {
+    flex: 1;
+    font-family: 'Courier New', monospace; font-size: 9pt;
+    color: #121E30; letter-spacing: 2px;
+  }
+  .section-count {
+    font-family: 'Courier New', monospace; font-size: 8pt;
+    color: #9A8E80; letter-spacing: 1px;
+  }
+  ul { list-style: none; }
+  li {
+    display: flex; align-items: center; gap: 10px;
+    padding: 6px 0; border-bottom: 1px dotted #E8E0D4;
+    font-size: 11pt;
+  }
+  .box {
+    width: 12px; height: 12px;
+    border: 1.5px solid #121E30; flex-shrink: 0;
+  }
+  .name { flex: 1; }
+  .ig {
+    font-family: 'Courier New', monospace; font-size: 8pt;
+    color: #9A8E80; letter-spacing: 0.5px;
+  }
+  .footer {
+    margin-top: 30px; padding-top: 10px;
+    border-top: 1px solid #D4C8B8;
+    font-family: 'Courier New', monospace; font-size: 7.5pt;
+    color: #9A8E80; letter-spacing: 0.3px;
+  }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="title">Liste de courses</div>
+    <div class="meta">Méthode KMDC · ${generatedAt} · ${foods.length} aliment${foods.length > 1 ? 's' : ''}</div>
+  </div>
+  ${sections}
+  <div class="footer">
+    Cochez vos aliments au fur et à mesure. Listes verte et jaune à privilégier au quotidien.
+  </div>
+</body>
+</html>`;
 }
 
 function FilterBtn({
@@ -205,16 +362,41 @@ const s = StyleSheet.create({
   filterTextOn:        { color: theme.colors.invertInk },
   filterTextSuggested: { color: theme.colors.inkSoft },
 
-  list: { paddingBottom: theme.spacing.xl },
+  list:           { paddingBottom: theme.spacing.xl },
+  listWithFooter: { paddingBottom: 88 },
   row: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     paddingHorizontal: theme.spacing.lg, paddingVertical: 14,
     borderBottomWidth: 1, borderBottomColor: theme.colors.line,
     minHeight: theme.touchTarget,
   },
-  dot:     { width: 6, height: 6, flexShrink: 0 },
-  rowName: { flex: 1, fontFamily: theme.fontFamily.display, fontSize: theme.fontSize.md, color: theme.colors.ink },
-  ig:      { fontFamily: theme.fontFamily.mono, fontSize: 9, color: theme.colors.inkMuted, letterSpacing: 1 },
+  rowSelected:     { backgroundColor: theme.colors.lineSoft },
+  dot:             { width: 6, height: 6, flexShrink: 0 },
+  rowName:         { flex: 1, fontFamily: theme.fontFamily.display, fontSize: theme.fontSize.md, color: theme.colors.ink },
+  rowNameSelected: { fontStyle: 'italic' },
+  ig:              { fontFamily: theme.fontFamily.mono, fontSize: 9, color: theme.colors.inkMuted, letterSpacing: 1 },
+  checkbox: {
+    width: 22, height: 22, borderWidth: 1.5, borderColor: theme.colors.line,
+    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  },
+  checkboxOn: { backgroundColor: theme.colors.ink, borderColor: theme.colors.ink },
+  checkmark:  { color: theme.colors.invertInk, fontSize: 12 },
 
   empty: { fontFamily: theme.fontFamily.mono, fontSize: theme.fontSize.xs, color: theme.colors.inkMuted, fontStyle: 'italic', textAlign: 'center', marginTop: theme.spacing.xl, letterSpacing: 1 },
+
+  footer: {
+    position: 'absolute', left: 0, right: 0, bottom: 0,
+    flexDirection: 'row', alignItems: 'center', gap: 0,
+    backgroundColor: theme.colors.app,
+    borderTopWidth: 1, borderTopColor: theme.colors.ink,
+    paddingHorizontal: theme.spacing.lg, paddingVertical: 12,
+  },
+  footerInfo:        { flex: 1, flexDirection: 'row', alignItems: 'baseline', gap: 8 },
+  footerCount:       { fontFamily: theme.fontFamily.display, fontSize: theme.fontSize.xl, color: theme.colors.ink, letterSpacing: -0.5 },
+  footerLabel:       { fontFamily: theme.fontFamily.mono, fontSize: 9, color: theme.colors.inkMuted, letterSpacing: 1.5 },
+  footerClear:       { paddingHorizontal: 14, paddingVertical: 12, borderWidth: 1, borderColor: theme.colors.line, marginRight: 8 },
+  footerClearText:   { fontFamily: theme.fontFamily.mono, fontSize: 10, color: theme.colors.inkMuted, letterSpacing: 1.5 },
+  footerExport:      { paddingHorizontal: 14, paddingVertical: 12, backgroundColor: theme.colors.ink },
+  footerExportDisabled: { opacity: 0.5 },
+  footerExportText:  { fontFamily: theme.fontFamily.mono, fontSize: 10, color: theme.colors.invertInk, letterSpacing: 1.5 },
 });
